@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/images">
+        <file>download.png</file>
+        <file>exit.png</file>
+        <file>logo.png</file>
+        <file>property.png</file>
+        <file>refresh.png</file>
+        <file>search.png</file>
+        <file>ad_search.png</file>
+    </qresource>
+</RCC>
