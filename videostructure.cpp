@@ -81,6 +81,10 @@ namespace Hend
     {
         m_keys.insert( key, value );
     }
+    SearchResponseSnippetThumbnailKey SearchResponseSnippetThumbnail::thumbnailWithKey( QString const & key ) const
+    {
+        return m_keys.value( key );
+    }
 
     SearchResponseSnippet::SearchResponseSnippet():
         m_thumbnails{},
@@ -148,6 +152,7 @@ namespace Hend
     QString const &SearchResponseSnippet::title() const { return m_title; }
     QString const &SearchResponseSnippet::description() const { return m_description; }
     const QDateTime &SearchResponseSnippet::publishedDate() const { return m_publishedAt; }
+    SearchResponseSnippetThumbnail const &SearchResponseSnippet::thumbnail()const{ return m_thumbnails; }
 
     SearchResponse::SearchResponse():
         m_kind{},
@@ -300,12 +305,12 @@ namespace Hend
                 page_info_results_per_page = video_page_info["resultsPerPage"].toInt();
             m_videoResponse.setPageInfo( page_info_total_results, page_info_results_per_page );
         }
-        extractSearchResponseItems();
+        extractSearchResponseItems( m_jsonObject, m_videoResponse );
     }
 
-    void VideoStructure::extractSearchResponseItems()
+    void VideoStructure::extractSearchResponseItems( QJsonObject const & jsonObject, SearchListResponse & videoResponse)
     {
-        QJsonArray video_items = m_jsonObject["items"].toArray();
+        QJsonArray video_items = jsonObject["items"].toArray();
         if( video_items.isEmpty() ) return;
 
         for( const auto &vi: video_items )
@@ -317,7 +322,7 @@ namespace Hend
 
             SearchResponseSnippet video_items_snippet = extractVideoItemSnippet( items["snippet"].toObject() );
 
-            m_videoResponse.addItem( SearchResponse{ video_items_kind, video_items_etag ,
+            videoResponse.addItem( SearchResponse{ video_items_kind, video_items_etag ,
                                                      video_items_id, video_items_snippet });
         }
     }

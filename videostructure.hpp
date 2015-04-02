@@ -55,6 +55,7 @@ namespace Hend
     {
         SearchResponseSnippetThumbnail();
         void addKey( QString const & key, SearchResponseSnippetThumbnailKey const & value );
+        SearchResponseSnippetThumbnailKey thumbnailWithKey( QString const & key ) const;
     private:
         QMap< QString, SearchResponseSnippetThumbnailKey > m_keys;
     };
@@ -80,6 +81,7 @@ namespace Hend
         QString const &title() const;
         QDateTime   const &publishedDate() const;
         QString const &description() const;
+        SearchResponseSnippetThumbnail const & thumbnail() const;
     private:
         typedef SearchResponseSnippetThumbnail SRST;
         SRST                    m_thumbnails;
@@ -170,10 +172,10 @@ namespace Hend
     private:
         void readJsonFile( QByteArray const & );
         void extractVideoProperties();
-        void extractSearchResponseItems();
-        SearchResponseID extractVideoItemsID( QJsonObject const & );
-        SearchResponseSnippet extractVideoItemSnippet( QJsonObject const & );
-        SearchResponseSnippetThumbnailKey getSnippetThumbnailKey(QJsonObject const & object);
+        static void extractSearchResponseItems(const QJsonObject &jsonObject, SearchListResponse &videoResponse);
+        static SearchResponseID extractVideoItemsID( QJsonObject const & );
+        static SearchResponseSnippet extractVideoItemSnippet( QJsonObject const & );
+        static SearchResponseSnippetThumbnailKey getSnippetThumbnailKey(QJsonObject const & object);
 
     private:
         SearchListResponse      m_videoResponse;

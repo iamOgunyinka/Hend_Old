@@ -3,21 +3,45 @@
 
 #include <QWidget>
 #include <QtWidgets>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+
 class VideoDetails : public QWidget
 {
     Q_OBJECT
 public:
     explicit VideoDetails(QWidget *parent = nullptr);
-signals:
 
-public slots:
+    template< typename T >
+    void setNewDetails( T const & videoDetails )
+    {
+        QString thumbnailUrl = videoDetails.thumbnail().thumbnailWithKey( "default" ).url();
+        QNetworkRequest newRequest { QUrl( thumbnailUrl ) };
+        QNetworkReply *reply = m_networkManager.get( newRequest );
+
+        m_detailText->setText( videoDetails.description() );
+        m_titleLabel->setText( videoDetails.title() );
+        m_timestampLabel->setText( videoDetails.publishedDate().toString() );
+
+        QObject::connect( reply, SIGNAL(finished()), this, SLOT(finished()) );
+        QObject::connect( reply, SIGNAL(error(QNetworkReply::NetworkError)),
+                          this, SLOT(error(QNetworkReply::NetworkError)) );
+    }
+signals:
+    void networkError( QNetworkReply::NetworkError );
+private slots:
+    void finished();
+    void error( QNetworkReply::NetworkError );
 private:
-    QPixmap *m_thumbnail { nullptr };
+    void setupWindow();
+private:
+    QLabel  *m_thumbnail { nullptr };
     QLabel  *m_titleLabel { nullptr };
     QLabel  *m_timestampLabel { nullptr };
     QLabel  *m_videoLengthLabel { nullptr };
-    QLabel  *detailLabel { nullptr };
-    QGridLayout *m_gLayout { nullptr };
+    QTextEdit *m_detailText { nullptr };
+    QHBoxLayout *m_hLayout { nullptr };
+    QNetworkAccessManager m_networkManager{};
 };
 
 #endif // VIDEODETAILS_HPP

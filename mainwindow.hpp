@@ -77,7 +77,8 @@ namespace Hend
         void        advancedSearch();
         void        directDownload();
         void        findDownloadLink();
-        void        closeEvent(QCloseEvent *);
+        void        closeEvent( QCloseEvent * );
+        void        viewDetails( QModelIndex const & );
 
         void        filterUploadHandler();
         void        filterTypeHandler();

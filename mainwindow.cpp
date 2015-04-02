@@ -116,11 +116,10 @@ QMap< QString, filter_function_t > filterByDuration {
 
     QString MainWindow::YOUTUBE_URL = "https://www.googleapis.com/youtube/v3/search/?part=snippet";
     QString MainWindow::API_KEY = "AIzaSyBhl_zBnEEv_xiIukkMpz8ayoiwT1UdfQk";
-    unsigned int MainWindow::MAX_RESULT = 20;
+    unsigned int MainWindow::MAX_RESULT = 40;
 
     void MainWindow::download( QString const & url, QString const & videoTitle, QMainWindow *parent )
     {
-        qDebug() << "Url is " << url << "\n\n";
         static DownloadManagerWidget downloadManager( parent );
         QString filename = QFileDialog::getSaveFileName( parent, "Get filename", QDir::currentPath() );
         downloadManager.addDownload( url, filename, videoTitle );
@@ -154,6 +153,7 @@ QMap< QString, filter_function_t > filterByDuration {
 
     void MainWindow::setupWindowButtons()
     {
+        m_videoDetailsList->setStyleSheet("QWidget{height: 30px;}");
         m_progressBar->setParent( this );
         m_progressBar->setWindowTitle( windowTitle() );
         m_progressBar->setWindowIcon( windowIcon() );
@@ -239,6 +239,8 @@ QMap< QString, filter_function_t > filterByDuration {
         QObject::connect( m_exitAction, SIGNAL(triggered()),
                           this, SLOT( close()) );
 
+        QObject::connect( m_videoDisplayTable, SIGNAL(activated(QModelIndex)),
+                          this, SLOT(viewDetails(QModelIndex)) );
         QObject::connect( m_filterByUploadDateButton, SIGNAL(clicked()),
                           this, SLOT(filterUploadHandler()) );
         QObject::connect( m_filterByTypeButton, SIGNAL(clicked()),
@@ -333,6 +335,12 @@ QMap< QString, filter_function_t > filterByDuration {
         m_videoDisplayTable->setSelectionBehavior( QAbstractItemView::SelectRows );
         m_videoDisplayTable->setSelectionMode( QAbstractItemView::SingleSelection );
         m_videoDisplayTable->horizontalHeader()->setSectionResizeMode( QHeaderView::Stretch );
+    }
+
+    void MainWindow::viewDetails( QModelIndex const & index )
+    {
+        m_videoDetailsList->setNewDetails( m_underlyingProxyTableModel->videoStructure()
+                                           .getSearchResponse( index.row() ).snippet() );
     }
 
     void MainWindow::downloadProgressMonitor(qint64 done, qint64 total , WhatToFetch )
