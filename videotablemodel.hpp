@@ -4,6 +4,7 @@
 #include <QAbstractTableModel>
 #include <QSortFilterProxyModel>
 #include <QSize>
+#include <functional>
 
 #include "videostructure.hpp"
 
