@@ -1,7 +1,8 @@
-#ifndef FUNCTIONS_HPP
-#define FUNCTIONS_HPP
+#ifndef FILTER_FUNCTIONS_HPP
+#define FILTER_FUNCTIONS_HPP
 
 #include <QDateTime>
+#include <functional>
 #include "videotablemodel.hpp"
 
 namespace Hend
@@ -36,10 +37,26 @@ namespace Hend
                     .year() == QDate::currentDate().year();
         }
 
-        static inline bool filterByShortVideos( int, QModelIndex const &, VideoTableModel *)
+        static inline bool filterDataByVideoTypeImpl( int current_row, QModelIndex const &, VideoTableModel *model, QString const & type )
+        {
+            return model->videoStructure().getSearchResponse( current_row ).id().kind() == type;
+        }
+
+        static inline bool showAllResults( int, QModelIndex const &, VideoTableModel *)
         {
             return true;
         }
+
+        static auto filterDataByVideo = std::bind( filterDataByVideoTypeImpl, std::placeholders::_1, std::placeholders::_2,
+                                            std::placeholders::_3, "youtube#video" );
+        static auto filterDataByChannel = std::bind( filterDataByVideoTypeImpl, std::placeholders::_1, std::placeholders::_2,
+                                              std::placeholders::_3, "youtube#channel" );
+        static auto filterDataByPlaylist = std::bind( filterDataByVideoTypeImpl, std::placeholders::_1, std::placeholders::_2,
+                                               std::placeholders::_3, "youtube#playlist" );
+        static auto filterDataByMovie = std::bind( filterDataByVideoTypeImpl, std::placeholders::_1, std::placeholders::_2,
+                                            std::placeholders::_3, "youtube#movie" );
+        static auto filterDataByShow = std::bind( filterDataByVideoTypeImpl, std::placeholders::_1, std::placeholders::_2,
+                                           std::placeholders::_3, "youtube#show" );
     }
 }
-#endif // FUNCTIONS_HPP
+#endif // FILTER_FUNCTIONS_HPP

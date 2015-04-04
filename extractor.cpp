@@ -403,7 +403,6 @@ namespace Hend
     void FormatSpecifier::showVideoLinks()
     {
         videoStreams = urlFinder->getVideoStreams();
-        qDebug()<< "Size of videos is " << videoStreams.size() << "\n";
         int sizeOfVideo = videoStreams.size();
         QString text {};
         QGridLayout *gLayout = new QGridLayout;
@@ -419,14 +418,16 @@ namespace Hend
                 QObject::connect( newButton, SIGNAL(clicked()), sigMapper, SLOT(map()) );
                 sigMapper->setMapping( newButton, i );
             }
+            QVBoxLayout *vLayout = new QVBoxLayout;
+            vLayout->addWidget( downloadButton );
+            vLayout->addWidget( cancelButton );
+
+            hLayout->addLayout( gLayout );
+            hLayout->addLayout( vLayout );
         } else {
             gLayout->addWidget( new QLabel("Unable to find any link associated with this video"), 0, 0 );
             downloadButton->setEnabled( false );
         }
-        gLayout->addWidget( downloadButton, sizeOfVideo, 0, 1, 1 );
-        gLayout->addWidget( cancelButton, sizeOfVideo, 1, 1, 1 );
-        hLayout->addLayout( gLayout );
-
         setLayout( hLayout );
         QObject::connect( sigMapper, SIGNAL(mapped(int)), this, SLOT(downloadLink(int)) );
         QObject::connect( downloadButton, SIGNAL(clicked()), this, SLOT( accept()) );

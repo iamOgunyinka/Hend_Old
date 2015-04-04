@@ -27,44 +27,23 @@ namespace Hend
     {
         m_progressBar->reset();
     }
-
-    VideoMetaData::VideoMetaData():
-        VideoMetaData( "", "", "" )
-    {
-
-    }
-
-    VideoMetaData::VideoMetaData(QString const & num, QString const &type, QString const &ext):
-        m_num( num ), m_type( type ), m_ext( ext )
-    {
-
-    }
-    VideoUrl::VideoUrl():
-        VideoUrl{ "", "", "" }
-    {
-
-    }
-    VideoUrl::VideoUrl(const QString &ext, const QString &type, const QString &url):
-        m_ext( ext ), m_type( type ), m_url( url )
-    {
-
-    }
-
-    std::map< QString, filter_function_t > MainWindow::filterByDate {
-        { "All", [](...){ return true; } },
+    std::map< QString, filter_function_t > MainWindow::filterSearchResultsByDate {
+        { "All", showAllResults },
         { "Today", filterDataByTodaysDate },
         { "Last 7 days", filterDataFromLastSevenDays },
         { "This Month", filterDataFromThisMonth },
         { "This year", filterDataFromThisYear },
         { "Last year", filterDataFromLastYear }
     };
-
-    /*
-QMap< QString, filter_function_t > filterByDuration {
-    { "Short( < 4minutes )" },
-    { "Long( > 20 minutes )" }
-};
-*/
+    std::map< QString, filter_function_t > MainWindow::filterSearchResultsByType
+    {
+        { "All", showAllResults },
+        { "Video", filterDataByVideo },
+        { "Channel", filterDataByChannel },
+        { "Playlist", filterDataByPlaylist },
+        { "Movie", filterDataByMovie },
+        { "Show", filterDataByShow }
+    };
 
     MainWindow::MainWindow(QWidget *parent) :
         QMainWindow( parent ),
@@ -90,11 +69,11 @@ QMap< QString, filter_function_t > filterByDuration {
         m_videoDetailsList{ new VideoDetails },
         m_filterList{ new QListWidget },
 
-        m_filterByUploadDateButton{ new QPushButton("Upload Date") },
-        m_filterByTypeButton{ new QPushButton("Type") },
-        m_filterByDurationButton{ new QPushButton("Duration") },
-        m_filterByFeaturesButton{ new QPushButton("Features") },
-        m_filterBySortButton{ new QPushButton("Sort By") },
+        m_filterByUploadDateButton{ new QPushButton("Filter by Upload Date") },
+        m_filterByTypeButton{ new QPushButton("Filter by Type") },
+        m_filterByDurationButton{ new QPushButton("Filter by Duration") },
+        m_filterByFeaturesButton{ new QPushButton("Filter by Features") },
+        m_filterBySortButton{ new QPushButton("Sort Videos") },
         m_progressBar{ new ProgressBar },
 
         m_networkManager{ new NetworkManager },
@@ -316,8 +295,6 @@ QMap< QString, filter_function_t > filterByDuration {
 
     void MainWindow::processResponseReceived(const QByteArray & response, WhatToFetch whatToFetch )
     {
-        if( response.isEmpty() ) qDebug() << "No response received.";
-
         switch ( whatToFetch ){
         case WhatToFetch::VideoInfo:
             displayVideoInfo( response );
@@ -355,7 +332,7 @@ QMap< QString, filter_function_t > filterByDuration {
     void MainWindow::filterUploadHandler()
     {
         m_filterList->clear();
-        for( const auto &dates: filterByDate ){
+        for( auto const &dates: filterSearchResultsByDate ){
             m_filterList->addItem( dates.first );
         }
     }
@@ -363,8 +340,8 @@ QMap< QString, filter_function_t > filterByDuration {
     void MainWindow::filterTypeHandler()
     {
         m_filterList->clear();
-        m_filterList->addItems( QStringList { "Video", "Channel", "Playlist",
-                                              "Movie", "Show"});
+        for( auto const & types: filterSearchResultsByType )
+            m_filterList->addItem( types.first );
     }
 
     void MainWindow::filterDurationHandler()
@@ -390,8 +367,11 @@ QMap< QString, filter_function_t > filterByDuration {
 
     void MainWindow::filterController( const QString & current_filter )
     {
-        if( filterByDate.find( current_filter ) != filterByDate.end() ){
-            m_proxyModel->setFilter( CustomFilter{ filterByDate[current_filter] } );
+        if( filterSearchResultsByDate.find( current_filter ) != filterSearchResultsByDate.end() ){
+            m_proxyModel->setFilter( CustomFilter{ filterSearchResultsByDate[current_filter] } );
+            m_proxyModel->invalidate();
+        } else if( filterSearchResultsByType.find( current_filter ) != filterSearchResultsByType.cend() ){
+            m_proxyModel->setFilter( CustomFilter{ filterSearchResultsByType[current_filter]} );
             m_proxyModel->invalidate();
         }
     }

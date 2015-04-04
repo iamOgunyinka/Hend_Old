@@ -26,10 +26,10 @@ HEADERS  += networkmanager.hpp \
     videostructure.hpp \
     videotablemodel.hpp \
     searchdialog.hpp \
-    functions.hpp \
     extractor.hpp \
     downloadmanager.hpp \
-    videodetails.hpp
+    videodetails.hpp \
+    filterfunctions.hpp
 
 FORMS    +=
 

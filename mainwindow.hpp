@@ -8,7 +8,7 @@
 
 #include "networkmanager.hpp"
 #include "searchdialog.hpp"
-#include "functions.hpp"
+#include "filterfunctions.hpp"
 #include "extractor.hpp"
 #include "downloadmanager.hpp"
 #include "videodetails.hpp"
@@ -46,10 +46,6 @@ namespace Hend
         QString m_url;
     };
 
-    //static QMap< QString, FilterFunctions::filter_function_t > filterByType;
-    //static QMap< QString, FilterFunctions::filter_function_t > filterByDuration;
-    //static QMap< QString, FilterFunctions::filter_function_t > filterByFeatures;
-    //static QMap< QString, FilterFunctions::filter_function_t > filterBySorts;
     class MainWindow : public QMainWindow
     {
         Q_OBJECT
@@ -57,8 +53,12 @@ namespace Hend
         using video_list = typename std::vector<VideoUrl>;
         explicit    MainWindow( QWidget *parent = nullptr );
         ~MainWindow();
-        static std::map< QString, filter_function_t > filterByDate;
 
+        static std::map< QString, filter_function_t > filterSearchResultsByDate;
+        static std::map< QString, filter_function_t > filterSearchResultsByType;
+        //static std::map< QString, filter_function_t > filterSearchResultsByDuration;
+        //static std::map< QString, filter_function_t > filterSearchResultsByFeatures;
+        //static std::map< QString, filter_function_t > filterSearchResultsBySorting;
         static QString YOUTUBE_URL;
         static QString API_KEY;
         static unsigned int MAX_RESULT;
