@@ -1,14 +1,13 @@
 #ifndef EXTRACTOR_HPP
 #define EXTRACTOR_HPP
 
-#include <QtWidgets>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QUrlQuery>
-#include <QFileDialog>
 #include <QEventLoop>
 #include <QRegularExpression>
 #include <QDomDocument>
+#include <QtWidgets>
 
 namespace Hend
 {

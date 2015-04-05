@@ -20,7 +20,17 @@ public:
         QNetworkReply *reply = m_networkManager.get( newRequest );
 
         m_detailText->setText( videoDetails.description() );
+        m_detailText->setDocumentTitle( "Description" );
+        m_detailText->setReadOnly( true );
+        m_detailText->setToolTip( "Summary of the video descrition");
+
         m_titleLabel->setText( videoDetails.title() );
+        QFont titleFont = m_titleLabel->font();
+        titleFont.setBold( true );
+        titleFont.setItalic( true );
+        titleFont.setWeight( 15 );
+        m_titleLabel->setFont( titleFont );
+
         m_timestampLabel->setText( videoDetails.publishedDate().toString() );
 
         QObject::connect( reply, SIGNAL(finished()), this, SLOT(finished()) );
@@ -40,7 +50,7 @@ private:
     QLabel  *m_timestampLabel { nullptr };
     QLabel  *m_videoLengthLabel { nullptr };
     QTextEdit *m_detailText { nullptr };
-    QHBoxLayout *m_hLayout { nullptr };
+    QGridLayout *m_gLayout { nullptr };
     QNetworkAccessManager m_networkManager{};
 };
 

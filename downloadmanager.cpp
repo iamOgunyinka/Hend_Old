@@ -113,8 +113,13 @@ DownloadManager::DownloadManager(const QString &url, QString const & filename,
     QObject::connect( m_buttonPause, SIGNAL(clicked()), this, SLOT( paused()) );
     QObject::connect( m_buttonCancel, SIGNAL(clicked()), this, SLOT(cancelled()) );
     QObject::connect( m_buttonResume, SIGNAL(clicked()), this, SLOT(resumed()) );
-
+    QObject::connect( m_downloadManager, SIGNAL(downloadComplete()), this, SLOT(downloadCompleted()) );
     setLayout( m_gLayout );
+}
+
+void DownloadManager::downloadCompleted()
+{
+    disableAllButtons();
 }
 
 void DownloadManager::paused()

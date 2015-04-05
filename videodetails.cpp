@@ -8,7 +8,7 @@ VideoDetails::VideoDetails(QWidget *parent) :
 
 void VideoDetails::setupWindow()
 {
-    m_hLayout = new QHBoxLayout( this );
+    m_gLayout = new QGridLayout;
     m_titleLabel = new QLabel();
     m_timestampLabel = new QLabel();
     m_videoLengthLabel = new QLabel();
@@ -18,17 +18,12 @@ void VideoDetails::setupWindow()
     m_thumbnail->setBackgroundRole( QPalette::Dark );
     m_thumbnail->setScaledContents( true );
 
-    QVBoxLayout *hThumbnailLayout = new QVBoxLayout;
-    hThumbnailLayout->addWidget( m_thumbnail );
-    hThumbnailLayout->addWidget( m_videoLengthLabel );
-    hThumbnailLayout->addWidget( m_timestampLabel );
+    m_gLayout->addWidget( m_titleLabel, 0, 0 );
+    m_gLayout->addWidget( m_thumbnail, 1, 0 );
+    m_gLayout->addWidget( m_timestampLabel, 2, 0 );
+    m_gLayout->addWidget( m_detailText, 1, 1 );
 
-    QVBoxLayout *hDetailsLayout = new QVBoxLayout;
-    hDetailsLayout->addWidget( m_titleLabel );
-    hDetailsLayout->addWidget( m_detailText );
-
-    m_hLayout->addLayout( hThumbnailLayout );
-    m_hLayout->addLayout( hDetailsLayout );
+    setLayout( m_gLayout );
 }
 
 void VideoDetails::error(QNetworkReply::NetworkError error )

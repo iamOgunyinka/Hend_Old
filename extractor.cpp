@@ -91,9 +91,12 @@ namespace Hend
             request.setRawHeader( QString("USER-AGENT").toUtf8(), QString{ Constants::user_agent }.toUtf8() );
 
             QEventLoop wait_reply;
-            QObject::connect( &network_manager, SIGNAL(finished(QNetworkReply*)), &wait_reply, SLOT(quit()) );
             QNetworkReply *reply = network_manager.get( request );
+            QObject::connect( &network_manager, SIGNAL(finished(QNetworkReply*)), &wait_reply, SLOT(quit()));
+            QObject::connect( reply, SIGNAL(error(QNetworkReply::NetworkError)), &wait_reply, SLOT(quit()) );
             wait_reply.exec();
+
+            if( !reply || reply->error() != QNetworkReply::NoError ) return QByteArray{};
 
             return reply->readAll();
         }
@@ -146,6 +149,8 @@ namespace Hend
         QList<StringMap> extractDash( QString const & dashUrl )
         {
             QByteArray dashdata = fetchDecode( dashUrl );
+            if( dashdata.isEmpty() ) return {};
+
             QString ns = "urn:mpeg:DASH:schema:MPD:2011";
             QDomDocument xmlDocument;
             if( !xmlDocument.setContent( dashdata, true ) ) return {};
@@ -184,6 +189,8 @@ namespace Hend
         {
             QString url = Constants::urls["vidinfo"].arg( videoID );
             QByteArray info = fetchDecode( url );
+            if( info.isEmpty() ) return {};
+
             return parseQueryString( info );
         }
     }
@@ -292,6 +299,7 @@ namespace Hend
         m_hasBasic = true;
         fetchBasicDelegate();
         auto dash = HelperFunctions::extractDash( m_dashUrl );
+        if( dash.isEmpty() ) return;
 
         processStreams( dash );
     }
@@ -299,6 +307,8 @@ namespace Hend
     void UrlFinder::fetchBasicDelegate()
     {
         auto elem = HelperFunctions::getVideoInfo( m_videoID );
+        if( elem.isEmpty() ) return;
+
         auto get_lst = [&]( QString const & key, QString const & default_ = "unknown" ){
                             return elem.value( key, default_ );
                         };

@@ -38,9 +38,9 @@ class DownloadManager: public QWidget
     Q_OBJECT
 
 public:
-    DownloadManager(QString const &url, QString const &filename, const QString &title,
-                    QWidget *parent = nullptr );
+    DownloadManager(QString const &url, QString const &filename, QString const &title, QWidget *parent = nullptr );
 private slots:
+    void downloadCompleted();
     void paused();
     void cancelled();
     void resumed();
