@@ -1,7 +1,6 @@
 #ifndef VIDEODETAILS_HPP
 #define VIDEODETAILS_HPP
 
-#include <QWidget>
 #include <QtWidgets>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
@@ -20,15 +19,14 @@ public:
         QNetworkReply *reply = m_networkManager.get( newRequest );
 
         m_detailText->setText( videoDetails.description() );
-        m_detailText->setDocumentTitle( "Description" );
         m_detailText->setReadOnly( true );
-        m_detailText->setToolTip( "Summary of the video descrition");
+        m_detailText->setToolTip( "Summary of the video descrition" );
 
         m_titleLabel->setText( videoDetails.title() );
         QFont titleFont = m_titleLabel->font();
         titleFont.setBold( true );
         titleFont.setItalic( true );
-        titleFont.setWeight( 15 );
+        titleFont.setWeight( 40 );
         m_titleLabel->setFont( titleFont );
 
         m_timestampLabel->setText( videoDetails.publishedDate().toString() );

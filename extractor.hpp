@@ -91,6 +91,7 @@ namespace Hend
         QList<Stream>   getVideoStreams() const;
         QList<Stream>   getAudioStreams() const;
         QList<Stream>   getAllStreams() const;
+        int             getVideoStreamLength() const;
     private:
         void            init_functions();
         void            fetchBasic();

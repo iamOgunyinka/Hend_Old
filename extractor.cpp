@@ -93,7 +93,8 @@ namespace Hend
             QEventLoop wait_reply;
             QNetworkReply *reply = network_manager.get( request );
             QObject::connect( &network_manager, SIGNAL(finished(QNetworkReply*)), &wait_reply, SLOT(quit()));
-            QObject::connect( reply, SIGNAL(error(QNetworkReply::NetworkError)), &wait_reply, SLOT(quit()) );
+            QObject::connect( &network_manager, SIGNAL(networkAccessibleChanged(QNetworkAccessManager::NetworkAccessibility)),
+                              &wait_reply, SLOT( quit() ) );
             wait_reply.exec();
 
             if( !reply || reply->error() != QNetworkReply::NoError ) return QByteArray{};
@@ -117,8 +118,8 @@ namespace Hend
 
         QString extractVideoID( QString const & url, bool &err )
         {
-            QString ws = "\\w-";
-            QString reg_re = "(?:^|[^%1]+)([%2]{11})(?:[^%3]+|$)";
+            QString const & ws = "\\w-";
+            QString const & reg_re = "(?:^|[^%1]+)([%2]{11})(?:[^%3]+|$)";
             QRegularExpression re { reg_re.arg( ws ).arg( ws ).arg( ws ) };
             QRegularExpressionMatch match = re.match( url );
             if( !match.hasMatch() ){
@@ -227,7 +228,6 @@ namespace Hend
         } else {
             m_resolution = std::get<0>( Constants::itags[m_itag] );
             m_bitRate = m_rawBitRate = m_fsize = 0;
-            //~ m_dimension = { m_resolution.split("-")[0].toInt(), m_resolution.split("x")[1].toInt() };
             m_quality = m_resolution;
         }
         m_videoFormat = sm["type"].split(";")[0];
@@ -390,7 +390,7 @@ namespace Hend
     QList<Stream> UrlFinder::getVideoStreams() const { return m_videoStreams; }
     QList<Stream> UrlFinder::getAudioStreams() const { return m_audioStreams; }
     QList<Stream> UrlFinder::getAllStreams() const { return m_streams; }
-
+    int UrlFinder::getVideoStreamLength() const { return m_length.toInt(); }
 
     FormatSpecifier::FormatSpecifier(const QString &url, QWidget *parent): QDialog( parent ),
         vLayout{ new QVBoxLayout }, hLayout{ new QHBoxLayout },
@@ -419,12 +419,15 @@ namespace Hend
 
         if( sizeOfVideo > 0 ){
             gLayout->addWidget( new QLabel(videoStreams.at(0).title() ), 0, 0 );
+            QString videoLength { tr( "Video Length: %1" )
+                        .arg( QDateTime::fromTime_t( urlFinder->getVideoStreamLength() ).toUTC().toString("hh:mm:ss")) };
+            gLayout->addWidget( new QLabel( videoLength ) );
             for( int i = 0; i != sizeOfVideo; ++i )
             {
                 text = QString( "%1 | %2" ).arg( videoStreams.at( i ).extension() )
                         .arg( videoStreams.at(i).resolution() );
                 QRadioButton *newButton = new QRadioButton( text );
-                gLayout->addWidget( newButton, ( i + 1 ), 0 );
+                gLayout->addWidget( newButton );
                 QObject::connect( newButton, SIGNAL(clicked()), sigMapper, SLOT(map()) );
                 sigMapper->setMapping( newButton, i );
             }

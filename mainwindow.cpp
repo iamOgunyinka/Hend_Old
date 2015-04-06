@@ -80,7 +80,7 @@ namespace Hend
         m_proxyModel{ new CustomVideoFilterProxyModel },
         m_underlyingProxyTableModel{ nullptr }
     {
-        setWindowTitle( tr("Hend - YouTube Download") );
+        setWindowTitle( tr( "Hend" ) );
         showMaximized();
         setWindowIcon( QIcon( ":/images/logo.png" ));
 
@@ -132,7 +132,7 @@ namespace Hend
 
     void MainWindow::setupWindowButtons()
     {
-        m_videoDetailsList->setStyleSheet("QWidget{height: 30px;}");
+        m_videoDetailsList->setStyleSheet("QWidget{height: 20px;}");
         m_progressBar->setParent( this );
         m_progressBar->setWindowTitle( windowTitle() );
         m_progressBar->setWindowIcon( windowIcon() );
