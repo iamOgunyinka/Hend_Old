@@ -13,15 +13,19 @@ void VideoDetails::setupWindow()
     m_timestampLabel = new QLabel();
     m_videoLengthLabel = new QLabel();
     m_detailText = new QTextEdit();
+    m_detailText->setReadOnly( true );
 
     m_thumbnail = new QLabel();
     m_thumbnail->setBackgroundRole( QPalette::Dark );
     m_thumbnail->setScaledContents( true );
 
+    QHBoxLayout *hLayout = new QHBoxLayout();
+    hLayout->addWidget( m_thumbnail );
+    hLayout->addWidget( m_detailText );
+
     m_gLayout->addWidget( m_titleLabel, 0, 0 );
-    m_gLayout->addWidget( m_thumbnail, 1, 0 );
+    m_gLayout->addLayout( hLayout, 1, 0 );
     m_gLayout->addWidget( m_timestampLabel, 2, 0 );
-    m_gLayout->addWidget( m_detailText, 1, 1 );
 
     setLayout( m_gLayout );
 }
@@ -39,6 +43,9 @@ void VideoDetails::finished()
     {
         QPixmap pixmap{};
         pixmap.loadFromData( reply->readAll() );
+        if( pixmap.height() > m_detailText->height() || pixmap.width() > m_detailText->width() ){
+            pixmap = pixmap.scaled( QSize( 80, 50 ), Qt::KeepAspectRatio );
+        }
         m_thumbnail->setPixmap( pixmap );
     }
 }

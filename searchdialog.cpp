@@ -90,8 +90,9 @@ namespace Hend
     QString SearchDialog::getQuery() const
     {
         QString query{ m_searchString->text() };
-        if( query.trimmed().isEmpty() ) return QString{};
+        if( query.trimmed().isEmpty() ) return {};
 
+        query = tr( QUrl::toPercentEncoding( query ) );
         query += QString{ tr( "&maxResults=%1").arg( m_videoMaxSize->value() ) };
         query += videoType[m_comboVideoType->currentText()];
         query += videoDimension[m_comboVideoDimension->currentText()];

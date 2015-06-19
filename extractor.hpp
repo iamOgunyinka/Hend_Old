@@ -1,17 +1,16 @@
 #ifndef EXTRACTOR_HPP
 #define EXTRACTOR_HPP
 
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
 #include <QUrlQuery>
-#include <QEventLoop>
 #include <QRegularExpression>
 #include <QDomDocument>
 #include <QtWidgets>
+#include "synchronizednetworkaccessmanager.hpp"
 
 namespace Hend
 {
     typedef QMap<QString, QString> StringMap;
+    
     class Constants
     {
     public:
@@ -26,9 +25,9 @@ namespace Hend
 
     namespace HelperFunctions
     {
-        QByteArray          fetchDecode( QString const & original_url );
+        QByteArray          fetchDecode( QString const & url );
         StringMap           parseQueryString( QByteArray const & data );
-        QString             extractVideoID( QString const & url, bool &err );
+        QString             extractVideoID( QString const & url );
         QList<StringMap>    extractSmap( QString const & key, StringMap const & data );
         QList<StringMap>    extractDash( QString const & dashUrl );
         StringMap           getVideoInfo( QString const & videoID );
@@ -57,16 +56,16 @@ namespace Hend
         void            download();
 
     private:
-        void init( StringMap const & sm, QString const & t );
+        void init( StringMap const & sm );
         QString generateFilename();
-        QString m_itag{},
+        QString m_title {},
+                m_itag{},
                 m_mediaType{},
                 m_resolution{},
                 m_quality{},
                 m_rawUrl{},
                 m_url{},
                 m_sig{},
-                m_title {},
                 m_filename {},
                 m_note {},
                 m_extension{},
@@ -93,7 +92,7 @@ namespace Hend
         QList<Stream>   getAllStreams() const;
         int             getVideoStreamLength() const;
     private:
-        void            init_functions();
+        void            initFunctions();
         void            fetchBasic();
         void            fetchBasicDelegate();
         void            processStreams( QList<StringMap> const & dash);

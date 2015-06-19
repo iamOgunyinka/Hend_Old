@@ -19,7 +19,8 @@ SOURCES += main.cpp\
     searchdialog.cpp \
     extractor.cpp \
     downloadmanager.cpp \
-    videodetails.cpp
+    videodetails.cpp \
+    synchronizednetworkaccessmanager.cpp
 
 HEADERS  += networkmanager.hpp \
     mainwindow.hpp \
@@ -29,7 +30,8 @@ HEADERS  += networkmanager.hpp \
     extractor.hpp \
     downloadmanager.hpp \
     videodetails.hpp \
-    filterfunctions.hpp
+    filterfunctions.hpp \
+    synchronizednetworkaccessmanager.hpp
 
 FORMS    +=
 

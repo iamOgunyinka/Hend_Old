@@ -25,12 +25,12 @@ namespace Hend
         m_videoID = videoID;
     }
 
-    void SearchResponseID::setChannelID(const QString &channelID)
+    void SearchResponseID::setChannelID( QString const &channelID)
     {
         m_channelID = channelID;
     }
 
-    void SearchResponseID::setPlaylistID(const QString &playlistID)
+    void SearchResponseID::setPlaylistID( QString const &playlistID)
     {
         m_playlistID = playlistID;
     }
@@ -98,25 +98,9 @@ namespace Hend
 
     }
 
-    QDateTime SearchResponseSnippet::toDate( const QString &dateString, const QString &format )
+    QDateTime SearchResponseSnippet::stringToDate( const QString &dateString, const QString &format )
     {
-        QDateTime date = QDateTime::fromString( dateString, format );
-        return date;
-    }
-
-    QDate SearchResponseSnippet::lastMonth( const QDate &today )
-    {
-        if( !today.isValid() ) return QDate{};
-
-        QDate lastMonth;
-
-        if( today.month() == 1 )
-        {
-            lastMonth.setDate( today.year() - 1, 12 , 1 );
-        } else {
-            lastMonth.setDate( today.year(), today.month() - 1, 1 );
-        }
-        return lastMonth;
+        return QDateTime::fromString( dateString, format );
     }
 
     void SearchResponseSnippet::setChannelID(const QString &channelID)
@@ -133,7 +117,7 @@ namespace Hend
     }
     void SearchResponseSnippet::setPublishedDate(const QString &publishDate)
     {
-        m_publishedAt = SearchResponseSnippet::toDate( publishDate );
+        m_publishedAt = SearchResponseSnippet::stringToDate( publishDate );
     }
     void SearchResponseSnippet::setChannelTitle(const QString &channelTitle)
     {
@@ -255,10 +239,11 @@ namespace Hend
     QString const &SearchListResponse::prevPageToken() const { return m_prevPageToken; }
     const PageInfo &SearchListResponse::pageInfo() const { return m_pageInfo; }
 
-    VideoStructure::VideoStructure(const QByteArray &json_response):
+    VideoStructure::VideoStructure( QByteArray const &json_response ):
         m_videoResponse {},
-        m_parseError{},
-        m_jsonDocument{ },
+        //QJsonParseError is an aggregate type, with members `offset`: int and `error`:enum ParseError
+        m_parseError{ 0, QJsonParseError::NoError },
+        m_jsonDocument{},
         m_jsonObject{}
     {
         setNewJsonDocument( json_response );
@@ -269,7 +254,7 @@ namespace Hend
         readJsonFile( json_document );
     }
 
-    void VideoStructure::readJsonFile(const QByteArray & json_doc )
+    void VideoStructure::readJsonFile( QByteArray const & json_doc )
     {
         if( !json_doc.isEmpty() ){
             m_jsonDocument = QJsonDocument::fromJson( json_doc, &m_parseError );

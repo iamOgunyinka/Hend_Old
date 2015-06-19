@@ -2,7 +2,6 @@
 
 namespace Hend
 {
-    QString Constants::user_agent { "Hend" };
     QString Constants::uefsm { "url_encoded_fmt_stream_map" };
     QString Constants::af { "adaptive_fmts" };
     QString Constants::jsplayer  = "(;\\s*ytplayer\\.config\\s*=\\s*(\\s*{.*?}\\s*)\\s*;)";
@@ -79,27 +78,28 @@ namespace Hend
 
     namespace HelperFunctions
     {
-        QByteArray fetchDecode( QString const & original_url )
+        QByteArray fetchDecode( QString const & url_ )
         {
-            QString url = original_url;
-            while( url.contains( '%') )
+            QString url = url_;
+            while( url.contains( '%' ) )
             {
                 url = QUrl::fromPercentEncoding( url.toUtf8() );
             }
+            /*
             QNetworkAccessManager network_manager;
             QNetworkRequest request { QUrl( url ) };
-            request.setRawHeader( QString("USER-AGENT").toUtf8(), QString{ Constants::user_agent }.toUtf8() );
-
+            request.setRawHeader( QString("USER-AGENT").toUtf8(), QString{ "Hend" }.toUtf8() );
             QEventLoop wait_reply;
             QNetworkReply *reply = network_manager.get( request );
             QObject::connect( &network_manager, SIGNAL(finished(QNetworkReply*)), &wait_reply, SLOT(quit()));
-            QObject::connect( &network_manager, SIGNAL(networkAccessibleChanged(QNetworkAccessManager::NetworkAccessibility)),
-                              &wait_reply, SLOT( quit() ) );
             wait_reply.exec();
 
-            if( !reply || reply->error() != QNetworkReply::NoError ) return QByteArray{};
-
+            if( !reply || reply->error() != QNetworkReply::NoError ) throw FailedAttempt{ reply->errorString().toStdString().c_str() };
             return reply->readAll();
+            */
+
+            SynchronizedNetworkAccessManager network_manager{ url }; //throws an exception
+            return network_manager.result;
         }
 
         inline StringMap parseQueryString( QByteArray const & data )
@@ -116,15 +116,13 @@ namespace Hend
             return map;
         }
 
-        QString extractVideoID( QString const & url, bool &err )
+        QString extractVideoID( QString const & url )
         {
-            QString const & ws = "\\w-";
-            QString const & reg_re = "(?:^|[^%1]+)([%2]{11})(?:[^%3]+|$)";
-            QRegularExpression re { reg_re.arg( ws ).arg( ws ).arg( ws ) };
+            QString const & reg_re = "(?:^|[^\\w-]+)([\\w-]{11})(?:[^\\w-]+|$)";
+            QRegularExpression re { reg_re };
             QRegularExpressionMatch match = re.match( url );
             if( !match.hasMatch() ){
-                err = true;
-                return QString{ "Need 11 characters of the video URL ID" };
+                throw FailedAttempt{ "Invalid video URL. Need 11 characters of the video URL" };
             }
             return match.captured(1);
         }
@@ -147,10 +145,9 @@ namespace Hend
             return list_of_smaps;
         }
 
-        QList<StringMap> extractDash( QString const & dashUrl )
+        QList<StringMap> extractDash( QString const & dashUrl ) noexcept( false )
         {
-            QByteArray dashdata = fetchDecode( dashUrl );
-            if( dashdata.isEmpty() ) return {};
+            QByteArray dashdata { fetchDecode( dashUrl ) }; //May throw an exception from fetchDecode
 
             QString ns = "urn:mpeg:DASH:schema:MPD:2011";
             QDomDocument xmlDocument;
@@ -189,61 +186,55 @@ namespace Hend
         StringMap getVideoInfo( QString const & videoID )
         {
             QString url = Constants::urls["vidinfo"].arg( videoID );
-            QByteArray info = fetchDecode( url );
+            QByteArray info = fetchDecode( url ); //May throw an exception from fetchDecode
             if( info.isEmpty() ) return {};
 
             return parseQueryString( info );
         }
-    }
-    Stream::Stream( StringMap const & sm, QString const & title )
+    } //~ namespace HelperFunctions
+    
+    Stream::Stream( StringMap const & sm, QString const & title ): m_title{ title }
     {
-        init( sm, title );
+        init( sm );
     }
-    void Stream::init( StringMap const & sm, QString const & t )
+    void Stream::init( StringMap const & sm )
     {
         m_itag = sm.value( "itag" );
         m_isDash = sm.contains( "dash" );
-        m_title = t;
-        if( !Constants::itags.contains( m_itag ) ) return;
+        if( !Constants::itags.contains( m_itag ) ) throw NotFound{ "No encoding found" };
 
         m_mediaType = std::get<2>( Constants::itags.value( m_itag ) );
         m_threed = ( sm.contains( "stereo3d" ) && sm.value( "stereo3d" ) == "1" );
 
         if( m_isDash )
         {
-            if ( sm["width"] != QString("None") || !sm["width"].isEmpty() )
+            if ( sm["width"] != QString( "None" ) || !sm["width"].isEmpty() )
             {
-                m_resolution = QString("%1x%2").arg(sm["width"]).arg(sm["height"]);
-                m_quality = m_resolution;
+                m_quality = m_resolution = QString("%1x%2").arg(sm["width"]).arg(sm["height"]);
                 m_dimension = { sm["width"].toInt(), sm["height"].toInt() };
             } else {
                 m_resolution = "0x0";
                 m_dimension = { 0, 0 };
                 m_rawBitRate = sm["bitrate"].toInt();
-                m_bitRate = std::get<0>( Constants::itags[m_itag] );
-                m_quality = m_bitRate;
+                m_quality = m_bitRate = std::get<0>( Constants::itags[m_itag] );
             }
             m_fsize = sm["size"].toInt();
-
         } else {
-            m_resolution = std::get<0>( Constants::itags[m_itag] );
+            m_quality = m_resolution = std::get<0>( Constants::itags[m_itag] );
             m_bitRate = m_rawBitRate = m_fsize = 0;
-            m_quality = m_resolution;
         }
         m_videoFormat = sm["type"].split(";")[0];
         m_extension = std::get<1>( Constants::itags[m_itag] );
         m_encrypted = sm.contains( "s" );
         m_note = std::get<3>( Constants::itags[m_itag] );
-        m_url = "";
         m_rawUrl = sm["url"];
         m_sig = ( m_encrypted ? sm["s"] : sm["sig"] );
         m_active = false;
 
-        if( m_mediaType == "audio" && !m_isDash )
+        if( m_mediaType == QString( "audio" ) && !m_isDash )
         {
             m_dimension = { 0, 0 };
-            m_bitRate = m_resolution;
-            m_quality = m_bitRate;
+            m_quality = m_bitRate = m_resolution;
             m_resolution = "0x0";
             m_rawBitRate = sm["bitrate"].toInt();
         }
@@ -270,31 +261,28 @@ namespace Hend
     UrlFinder::UrlFinder( QString const & videoUrl, bool start ): m_videoUrl( videoUrl )
     {
         if( start ){
-            init_functions();
+            startUrlExtraction();
         }
     }
     void UrlFinder::startUrlExtraction()
     {
         if( !m_hasBasic ){
-            init_functions();
+            initFunctions();
         }
     }
 
     UrlFinder::UrlFinder() = delete;
     QString const & UrlFinder::getTitle() const { return m_title; }
-    void UrlFinder::init_functions()
+    void UrlFinder::initFunctions()
     {
-        bool extractionFailed = false;
-        m_videoID = HelperFunctions::extractVideoID( m_videoUrl, extractionFailed );
-        if( extractionFailed ) return;
+        m_videoID = HelperFunctions::extractVideoID( m_videoUrl );
 
         m_watchVideoUrl = Constants::urls["watch_v"].arg( m_videoID );
         fetchBasic();
     }
     void UrlFinder::fetchBasic()
     {
-        if( m_hasBasic )
-            return;
+        if( m_hasBasic ) return;
 
         m_hasBasic = true;
         fetchBasicDelegate();
@@ -307,7 +295,7 @@ namespace Hend
     void UrlFinder::fetchBasicDelegate()
     {
         auto elem = HelperFunctions::getVideoInfo( m_videoID );
-        if( elem.isEmpty() ) return;
+        if( elem.isEmpty() ) throw NotFound{ "No associated information with this video ID" };
 
         auto get_lst = [&]( QString const & key, QString const & default_ = "unknown" ){
                             return elem.value( key, default_ );
@@ -392,7 +380,7 @@ namespace Hend
     QList<Stream> UrlFinder::getAllStreams() const { return m_streams; }
     int UrlFinder::getVideoStreamLength() const { return m_length.toInt(); }
 
-    FormatSpecifier::FormatSpecifier(const QString &url, QWidget *parent): QDialog( parent ),
+    FormatSpecifier::FormatSpecifier( QString const &url, QWidget *parent ): QDialog( parent ),
         vLayout{ new QVBoxLayout }, hLayout{ new QHBoxLayout },
         downloadButton{ new QPushButton("Download") }, cancelButton{ new QPushButton("Cancel") },
         urlFinder{ new UrlFinder( url ) }, sigMapper{ new QSignalMapper }
@@ -413,34 +401,29 @@ namespace Hend
     void FormatSpecifier::showVideoLinks()
     {
         videoStreams = urlFinder->getVideoStreams();
-        int sizeOfVideo = videoStreams.size();
         QString text {};
         QGridLayout *gLayout = new QGridLayout;
 
-        if( sizeOfVideo > 0 ){
-            gLayout->addWidget( new QLabel(videoStreams.at(0).title() ), 0, 0 );
-            QString videoLength { tr( "Video Length: %1" )
-                        .arg( QDateTime::fromTime_t( urlFinder->getVideoStreamLength() ).toUTC().toString("hh:mm:ss")) };
-            gLayout->addWidget( new QLabel( videoLength ) );
-            for( int i = 0; i != sizeOfVideo; ++i )
-            {
-                text = QString( "%1 | %2" ).arg( videoStreams.at( i ).extension() )
-                        .arg( videoStreams.at(i).resolution() );
-                QRadioButton *newButton = new QRadioButton( text );
-                gLayout->addWidget( newButton );
-                QObject::connect( newButton, SIGNAL(clicked()), sigMapper, SLOT(map()) );
-                sigMapper->setMapping( newButton, i );
-            }
-            QVBoxLayout *vLayout = new QVBoxLayout;
-            vLayout->addWidget( downloadButton );
-            vLayout->addWidget( cancelButton );
-
-            hLayout->addLayout( gLayout );
-            hLayout->addLayout( vLayout );
-        } else {
-            gLayout->addWidget( new QLabel("Unable to find any link associated with this video"), 0, 0 );
-            downloadButton->setEnabled( false );
+        gLayout->addWidget( new QLabel(videoStreams.at(0).title() ), 0, 0 );
+        QString videoLength { tr( "Video Length: %1" )
+                    .arg( QDateTime::fromTime_t( urlFinder->getVideoStreamLength() ).toUTC().toString("hh:mm:ss")) };
+        gLayout->addWidget( new QLabel( videoLength ) );
+        for( int i = 0; i != videoStreams.size(); ++i )
+        {
+            text = QString( "%1 | %2" ).arg( videoStreams.at( i ).extension() )
+                    .arg( videoStreams.at(i).resolution() );
+            QRadioButton *newButton = new QRadioButton( text );
+            gLayout->addWidget( newButton );
+            QObject::connect( newButton, SIGNAL(clicked()), sigMapper, SLOT(map()) );
+            sigMapper->setMapping( newButton, i );
         }
+        QVBoxLayout *vLayout = new QVBoxLayout;
+        vLayout->addWidget( downloadButton );
+        vLayout->addWidget( cancelButton );
+
+        hLayout->addLayout( gLayout );
+        hLayout->addLayout( vLayout );
+
         setLayout( hLayout );
         QObject::connect( sigMapper, SIGNAL(mapped(int)), this, SLOT(downloadLink(int)) );
         QObject::connect( downloadButton, SIGNAL(clicked()), this, SLOT( accept()) );

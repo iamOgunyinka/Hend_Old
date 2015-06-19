@@ -5,6 +5,7 @@
 #include <QtWidgets>
 #include <QMap>
 #include <QHeaderView>
+#include <memory>
 
 #include "networkmanager.hpp"
 #include "searchdialog.hpp"
@@ -78,6 +79,7 @@ namespace Hend
         void        directDownload();
         void        findDownloadLink();
         void        closeEvent( QCloseEvent * );
+        void        aboutHend();
         void        viewDetails( QModelIndex const & );
 
         void        filterUploadHandler();
@@ -106,6 +108,8 @@ namespace Hend
         QAction     *m_directDownloadAction;
         QAction     *m_downloadAction;
         QAction     *m_exitAction;
+        QAction     *m_aboutQt;
+        QAction     *m_aboutHend;
 
         QMenu       *m_toolbarViewMenu;
         QAction     *m_iconOnlyAction;

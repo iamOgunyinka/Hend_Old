@@ -30,7 +30,7 @@ namespace  Hend {
 
     QVariant VideoTableModel::data( const QModelIndex &index, int role ) const
     {
-        if( index.row() >= m_videoStructure.getSize() || index.row() < 0 ){
+        if( index.row() < 0 || index.row() >= rowCount() ){
             return QVariant{};
         }
         if( role == Qt::DisplayRole ){

@@ -57,6 +57,8 @@ namespace Hend
         m_directDownloadAction{ new QAction( QIcon(":/images/refresh.png"), tr("&Direct Download"), this ) },
         m_downloadAction{ new QAction( QIcon(":/images/download.png"), tr("&Download"),this ) },
         m_exitAction{ new QAction( QIcon(":/images/exit.png"), tr( "&Exit" ), this ) },
+        m_aboutQt{ new QAction{ tr( "About Qt" ), this } },
+        m_aboutHend{ new QAction{ tr( "About Hend" ), this } },
 
         m_toolbarViewMenu{ new QMenu{ "&Toolbar View" } },
         m_iconOnlyAction{ new QAction( tr( "Icon Only" ), this )},
@@ -128,6 +130,8 @@ namespace Hend
         m_toolbarViewMenu->addAction( m_hideToolbarAction );
 
         m_preferenceMenu->addMenu( m_toolbarViewMenu );
+        m_preferenceMenu->addAction( m_aboutHend );
+        m_preferenceMenu->addAction( m_aboutQt );
     }
 
     void MainWindow::setupWindowButtons()
@@ -217,6 +221,8 @@ namespace Hend
                           this, SLOT(advancedSearch()) );
         QObject::connect( m_exitAction, SIGNAL(triggered()),
                           this, SLOT( close()) );
+        QObject::connect( m_aboutQt, SIGNAL( triggered() ), qApp, SLOT( aboutQt() ) );
+        QObject::connect( m_aboutHend, SIGNAL(triggered()),this, SLOT( aboutHend() ) );
 
         QObject::connect( m_videoDisplayTable, SIGNAL(activated(QModelIndex)),
                           this, SLOT(viewDetails(QModelIndex)) );
@@ -286,9 +292,15 @@ namespace Hend
         case QMessageBox::No: default: return false;
         }
     }
+    //TODO
+    void MainWindow::aboutHend()
+    {
+        QMessageBox::information( this, tr("About Hend"), tr("Contact me via: ogunyinkajoshua@yahoo.com"), QMessageBox::Ok );
+    }
 
     void MainWindow::handleAllErrors(const QString & str )
     {
+        m_progressBar->close();
         QMessageBox::critical( this->window(), "Network Manager", str, QMessageBox::Ok );
         setStatusTip( str );
     }
@@ -382,12 +394,10 @@ namespace Hend
         QString query = QInputDialog::getText( this->window(), tr("Basic Search"),
                                                tr( "Enter video title" ),
                                                QLineEdit::Normal, QString{}, &ok );
-        if( ok && query.trimmed().size() != 0 ){
-            query.replace( "+", "%2C" );
-            query.replace( ' ', '+' );
-            QString new_query = YOUTUBE_URL +
-                    tr( "&q=%1&maxResults=%2&key=%3" )
-                    .arg(query)
+        query = tr( QUrl::toPercentEncoding( query ) );
+        if( ok && query.size() != 0 ){
+            QString new_query = YOUTUBE_URL + "&q=" + query +
+                    tr( "&maxResults=%1&key=%2" )
                     .arg( MAX_RESULT )
                     .arg( API_KEY );
             m_networkManager->sendRequest( QNetworkRequest( new_query ), WhatToFetch::VideoInfo );
@@ -402,15 +412,9 @@ namespace Hend
         searchDialog.setWindowModality( Qt::ApplicationModal );
 
         if( searchDialog.exec() == QDialog::Accepted ){
+            QString query = YOUTUBE_URL + "&q=" + searchDialog.getQuery() + "&key=" + API_KEY;
 
-            QString query = searchDialog.getQuery().trimmed();
-            query.replace( ' ', '+' );
-
-            QString new_query = QString( "%1&q=%2&key=%3" )
-                    .arg( YOUTUBE_URL )
-                    .arg( query )
-                    .arg( API_KEY );
-            QNetworkRequest request { new_query };
+            QNetworkRequest request { query };
             m_networkManager->sendRequest( request, WhatToFetch::VideoInfo );
             m_progressBar->exec();
         }
@@ -437,9 +441,16 @@ namespace Hend
     void MainWindow::universalDownload( QString const & videoID )
     {
         m_progressBar->show();
-        Hend::FormatSpecifier *formatManager = new Hend::FormatSpecifier( videoID, this );
-        m_progressBar->close();
+        std::unique_ptr<Hend::FormatSpecifier> formatManager {};
+        try {
+            formatManager.reset( new Hend::FormatSpecifier( videoID, this ) );
+        } catch( BaseError const & errorMessage ) {
+            QMessageBox::critical( this, "Error", tr( errorMessage.what() ), QMessageBox::Ok );
+            m_progressBar->close();
+            return;
+        }
 
+        m_progressBar->close();
         if( formatManager->exec() == QDialog::Accepted )
         {
             download( formatManager->getDownloadLink(), formatManager->title() );

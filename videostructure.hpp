@@ -62,10 +62,7 @@ namespace Hend
 
     struct SearchResponseSnippet
     {
-        static QDateTime toDate( QString const & dateString,
-                             QString const & format = "yyyy-MM-ddTHH:mm:ss.zzz'Z'" );
-        static QDate lastMonth( QDate const & today = QDate::currentDate() );
-
+        static QDateTime stringToDate( QString const & dateString, QString const & format = "yyyy-MM-ddTHH:mm:ss.zzz'Z'" );
     public:
         SearchResponseSnippet();
         void setChannelID( QString const & channelID );
