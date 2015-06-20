@@ -9,7 +9,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = Hend
 TEMPLATE = app
-QMAKE_CXXFLAGS = -std=c++11
+QMAKE_CXXFLAGS = -std=c++11 -Werror
 
 SOURCES += main.cpp\
     networkmanager.cpp \

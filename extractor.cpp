@@ -85,20 +85,8 @@ namespace Hend
             {
                 url = QUrl::fromPercentEncoding( url.toUtf8() );
             }
-            /*
-            QNetworkAccessManager network_manager;
-            QNetworkRequest request { QUrl( url ) };
-            request.setRawHeader( QString("USER-AGENT").toUtf8(), QString{ "Hend" }.toUtf8() );
-            QEventLoop wait_reply;
-            QNetworkReply *reply = network_manager.get( request );
-            QObject::connect( &network_manager, SIGNAL(finished(QNetworkReply*)), &wait_reply, SLOT(quit()));
-            wait_reply.exec();
-
-            if( !reply || reply->error() != QNetworkReply::NoError ) throw FailedAttempt{ reply->errorString().toStdString().c_str() };
-            return reply->readAll();
-            */
-
-            SynchronizedNetworkAccessManager network_manager{ url }; //throws an exception
+            SyncNetworkAccessManager network_manager{};
+            network_manager.getRequest( QUrl{ url } ); //might throw an exception, but caught in MainWindow.
             return network_manager.result;
         }
 

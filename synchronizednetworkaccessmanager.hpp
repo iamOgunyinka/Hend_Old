@@ -14,22 +14,19 @@ inline namespace ErrorMessages
     struct NotFound: public BaseError { NotFound( char const * const str ): BaseError{ str } {} };
 }
 
-class SynchronizedNetworkAccessManager : public QObject
+class SyncNetworkAccessManager : public QObject
 {
     Q_OBJECT
-    QNetworkAccessManager   m_networkManager;
-    QNetworkRequest         m_request;
-    QEventLoop              m_eventLoop;
+    QNetworkAccessManager   m_networkManager {};
+    QEventLoop              m_eventLoop {};
 signals:
-    void networkAccessibilityChanged( QNetworkAccessManager::NetworkAccessibility );
-    void networkError( QNetworkReply::NetworkError );
 public:
-    explicit SynchronizedNetworkAccessManager( QString const & url, QObject *parent = nullptr );
-    ~SynchronizedNetworkAccessManager();
+    explicit SyncNetworkAccessManager( QObject *parent = nullptr );
+    ~SyncNetworkAccessManager();
+    void getRequest( QUrl const & );
     QByteArray result {};
 public slots:
     void onFinished();
-    void onNetworkAccessibilityChanged( QNetworkAccessManager::NetworkAccessibility );
     void onNetworkError( QNetworkReply::NetworkError );
 };
 
