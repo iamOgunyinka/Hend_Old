@@ -12,7 +12,6 @@ TEMPLATE = app
 QMAKE_CXXFLAGS = -std=c++11 -Werror
 
 SOURCES += main.cpp\
-    networkmanager.cpp \
     mainwindow.cpp \
     videostructure.cpp \
     videotablemodel.cpp \
@@ -22,7 +21,7 @@ SOURCES += main.cpp\
     videodetails.cpp \
     synchronizednetworkaccessmanager.cpp
 
-HEADERS  += networkmanager.hpp \
+HEADERS  += \
     mainwindow.hpp \
     videostructure.hpp \
     videotablemodel.hpp \

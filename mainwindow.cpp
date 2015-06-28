@@ -2,31 +2,6 @@
 
 namespace Hend
 {
-    ProgressBar::ProgressBar(QWidget *parent):
-        QDialog{ parent }, m_progressBar{ new QProgressBar }
-    {
-        m_progressBar->setRange( 1, 100 );
-        m_progressBar->setTextVisible( true );
-
-        QVBoxLayout *layout = new QVBoxLayout( this );
-        layout->addWidget( new QLabel("Loading, please wait...") );
-        layout->addWidget( m_progressBar );
-        setLayout( layout );
-    }
-
-    void ProgressBar::setProgressStatus( qint64 done )
-    {
-        m_progressBar->setValue( done );
-        if( done == 100 ){
-            reset();
-            accept();
-        }
-    }
-
-    void ProgressBar::reset()
-    {
-        m_progressBar->reset();
-    }
     std::map< QString, filter_function_t > MainWindow::filterSearchResultsByDate {
         { "All", showAllResults },
         { "Today", filterDataByTodaysDate },
@@ -76,9 +51,8 @@ namespace Hend
         m_filterByDurationButton{ new QPushButton("Filter by Duration") },
         m_filterByFeaturesButton{ new QPushButton("Filter by Features") },
         m_filterBySortButton{ new QPushButton("Sort Videos") },
-        m_progressBar{ new ProgressBar },
 
-        m_networkManager{ new NetworkManager },
+        m_networkManager{ new SyncNetworkAccessManager },
         m_proxyModel{ new CustomVideoFilterProxyModel },
         m_underlyingProxyTableModel{ nullptr }
     {
@@ -109,12 +83,7 @@ namespace Hend
         }
     }
 
-    MainWindow::~MainWindow()
-    {
-        delete m_progressBar;
-        delete m_networkManager;
-        delete m_proxyModel;
-    }
+    MainWindow::~MainWindow(){}
 
     void MainWindow::setupMenubar()
     {
@@ -137,12 +106,6 @@ namespace Hend
     void MainWindow::setupWindowButtons()
     {
         m_videoDetailsList->setStyleSheet("QWidget{height: 20px;}");
-        m_progressBar->setParent( this );
-        m_progressBar->setWindowTitle( windowTitle() );
-        m_progressBar->setWindowIcon( windowIcon() );
-        m_progressBar->setWindowFlags( Qt::Dialog | Qt::FramelessWindowHint |
-                                       Qt::WindowTitleHint );
-        m_progressBar->setWindowModality( Qt::ApplicationModal );
 
         QWidget *widget = new QWidget;
         QVBoxLayout *vLayout = new QVBoxLayout( widget );
@@ -238,13 +201,6 @@ namespace Hend
                           this, SLOT( filterSortHandler()) );
         QObject::connect( m_filterList, SIGNAL(currentTextChanged(QString)),
                           this, SLOT(filterController(QString)) );
-
-        QObject::connect( m_networkManager, SIGNAL(problemWithRequest(QString)),
-                          this, SLOT(handleAllErrors(QString)) );
-        QObject::connect( m_networkManager, SIGNAL(responseReceived( QByteArray, WhatToFetch)),
-                          this, SLOT( processResponseReceived( QByteArray, WhatToFetch )) );
-        QObject::connect( m_networkManager, SIGNAL(reportDownloadProgress( qint64,qint64, WhatToFetch)),
-                          this, SLOT(downloadProgressMonitor( qint64,qint64, WhatToFetch)) );
     }
 
     void MainWindow::iconOnly()
@@ -298,22 +254,10 @@ namespace Hend
         QMessageBox::information( this, tr("About Hend"), tr("Contact me via: ogunyinkajoshua@yahoo.com"), QMessageBox::Ok );
     }
 
-    void MainWindow::handleAllErrors(const QString & str )
+    void MainWindow::handleAllErrors( const QString & str )
     {
-        m_progressBar->close();
         QMessageBox::critical( this->window(), "Network Manager", str, QMessageBox::Ok );
         setStatusTip( str );
-    }
-
-    void MainWindow::processResponseReceived(const QByteArray & response, WhatToFetch whatToFetch )
-    {
-        switch ( whatToFetch ){
-        case WhatToFetch::VideoInfo:
-            displayVideoInfo( response );
-            break;
-        default:
-            break;
-        }
     }
 
     void MainWindow::displayVideoInfo( QByteArray const & response )
@@ -330,15 +274,6 @@ namespace Hend
     {
         m_videoDetailsList->setNewDetails( m_underlyingProxyTableModel->videoStructure()
                                            .getSearchResponse( index.row() ).snippet() );
-    }
-
-    void MainWindow::downloadProgressMonitor(qint64 done, qint64 total , WhatToFetch )
-    {
-        if( total == 0 || done == 0 ){
-            m_progressBar->close();
-            return;
-        }
-        m_progressBar->setProgressStatus( ( done * 100 ) / total );
     }
 
     void MainWindow::filterUploadHandler()
@@ -400,8 +335,13 @@ namespace Hend
                     tr( "&maxResults=%1&key=%2" )
                     .arg( MAX_RESULT )
                     .arg( API_KEY );
-            m_networkManager->sendRequest( QNetworkRequest( new_query ), WhatToFetch::VideoInfo );
-            m_progressBar->exec();
+            try {
+                m_networkManager->getRequest( QUrl( new_query ) );
+                displayVideoInfo( m_networkManager->result );
+            } catch ( BaseError & err ) {
+                handleAllErrors( err.what() );
+                return;
+            }
         }
     }
 
@@ -413,10 +353,13 @@ namespace Hend
 
         if( searchDialog.exec() == QDialog::Accepted ){
             QString query = YOUTUBE_URL + "&q=" + searchDialog.getQuery() + "&key=" + API_KEY;
-
-            QNetworkRequest request { query };
-            m_networkManager->sendRequest( request, WhatToFetch::VideoInfo );
-            m_progressBar->exec();
+            try {
+                m_networkManager->getRequest( QUrl{ query } );
+                displayVideoInfo( m_networkManager->result );
+            } catch( BaseError & err ){
+                handleAllErrors( err.what() );
+                return;
+            }
         }
     }
     void MainWindow::directDownload()
@@ -440,17 +383,13 @@ namespace Hend
 
     void MainWindow::universalDownload( QString const & videoID )
     {
-        m_progressBar->show();
         std::unique_ptr<Hend::FormatSpecifier> formatManager {};
         try {
             formatManager.reset( new Hend::FormatSpecifier( videoID, this ) );
         } catch( BaseError const & errorMessage ) {
             QMessageBox::critical( this, "Error", tr( errorMessage.what() ), QMessageBox::Ok );
-            m_progressBar->close();
             return;
         }
-
-        m_progressBar->close();
         if( formatManager->exec() == QDialog::Accepted )
         {
             download( formatManager->getDownloadLink(), formatManager->title() );

@@ -7,7 +7,6 @@
 #include <QHeaderView>
 #include <memory>
 
-#include "networkmanager.hpp"
 #include "searchdialog.hpp"
 #include "filterfunctions.hpp"
 #include "extractor.hpp"
@@ -16,50 +15,15 @@
 
 namespace Hend
 {
-    struct ProgressBar: QDialog
-    {
-        Q_OBJECT
-        QProgressBar *m_progressBar;
-    public:
-        ProgressBar( QWidget *parent = nullptr );
-        void reset();
-    public slots:
-        void setProgressStatus(qint64 done);
-    };
-
-    struct VideoMetaData
-    {
-        VideoMetaData( QString const & num, QString const & type, QString const & ext );
-        VideoMetaData();
-    private:
-        QString m_num;
-        QString m_type;
-        QString m_ext;
-    };
-
-    struct VideoUrl
-    {
-        VideoUrl();
-        VideoUrl( QString const & ext, QString const & type, QString const & url );
-    private:
-        QString m_ext;
-        QString m_type;
-        QString m_url;
-    };
-
     class MainWindow : public QMainWindow
     {
         Q_OBJECT
     public:
-        using video_list = typename std::vector<VideoUrl>;
         explicit    MainWindow( QWidget *parent = nullptr );
         ~MainWindow();
 
         static std::map< QString, filter_function_t > filterSearchResultsByDate;
         static std::map< QString, filter_function_t > filterSearchResultsByType;
-        //static std::map< QString, filter_function_t > filterSearchResultsByDuration;
-        //static std::map< QString, filter_function_t > filterSearchResultsByFeatures;
-        //static std::map< QString, filter_function_t > filterSearchResultsBySorting;
         static QString YOUTUBE_URL;
         static QString API_KEY;
         static unsigned int MAX_RESULT;
@@ -72,8 +36,6 @@ namespace Hend
         void        textBesideIcon();
         void        hideToolbar();
         void        handleAllErrors( QString const & );
-        void        processResponseReceived(QByteArray const & response, WhatToFetch whatToFetch);
-        void        downloadProgressMonitor( qint64, qint64, WhatToFetch );
         void        basicSearch();
         void        advancedSearch();
         void        directDownload();
@@ -129,8 +91,7 @@ namespace Hend
         QPushButton *m_filterByFeaturesButton;
         QPushButton *m_filterBySortButton;
 
-        ProgressBar                   *m_progressBar;
-        NetworkManager                *m_networkManager;
+        SyncNetworkAccessManager      *m_networkManager;
         CustomVideoFilterProxyModel   *m_proxyModel;
         VideoTableModel               *m_underlyingProxyTableModel;
     signals:

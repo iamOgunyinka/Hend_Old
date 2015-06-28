@@ -5,6 +5,7 @@ Download::Download( QObject *parent ) :
     m_networkRequest{}, m_networkReply{ nullptr }, m_downloadRate{ 0 },
     m_file{ nullptr }
 {
+    m_networkRequest.setRawHeader( "USER-AGENT", "Hend" );
 }
 
 void Download::cancel()
@@ -41,6 +42,7 @@ void Download::resume()
 {
     m_downloadRate = m_file->size();
     QByteArray range = "bytes=" + QByteArray::number( m_downloadRate ) + "-";
+
     m_networkRequest.setRawHeader( "Range", range );
     download( m_networkRequest );
 }
